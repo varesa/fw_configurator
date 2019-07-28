@@ -1,4 +1,4 @@
-
+import sys
 
 class CommandGroup():
     def __init__(self, prefix, action='set'):
@@ -9,7 +9,21 @@ class CommandGroup():
     def append(self, rule):
         assert self.prefix == '' or rule.startswith(self.prefix + " "), \
                 f"Rule doesn't match group prefix. Prefix: {self.prefix}, rule: {rule}"
-        self.rules.append(rule)
+        self.rules.append(f"{self.action} {rule}")
 
     def is_changed(self, other):
-        return True
+        if self.prefix == '':
+            return True
+
+        old = filter(lambda x: x.startswith(f"set {self.prefix} "), other)
+
+        new_sorted = sorted(self.rules)
+        old_sorted = sorted(old)
+
+
+        equality = old_sorted == new_sorted
+
+        if not equality:
+            print("Old:", old_sorted)
+            print("New:", new_sorted)
+        return equality

@@ -48,7 +48,7 @@ check_mode = args.check
 print("--Fetching old config")
 v = Vyos(args.address)
 v.copy_tools()
-original = v.get_config()
+original = list(v.get_config())
 
 ## Generate configuration
 
@@ -77,7 +77,7 @@ commands_by_action = {
 
 for grp in command_groups_to_apply:
     for rule in grp.rules:
-        commands_by_action[grp.action].append(f"{grp.action} {rule}")
+        commands_by_action[grp.action].append(rule)
 
 commands = commands_by_action['delete'] + commands_by_action['set']
 
