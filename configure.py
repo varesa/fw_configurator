@@ -46,7 +46,7 @@ check_mode = args.check
 ## Get original configuration
 
 print("--Fetching old config")
-v = Vyos('fw2')
+v = Vyos(args.address)
 v.copy_tools()
 original = v.get_config()
 
