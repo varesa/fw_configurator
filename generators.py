@@ -70,7 +70,7 @@ def generate_firewall(filename):
                 prefix = f"firewall group {group_type}-group {group_name}"
                 command_group = CommandGroup(prefix=prefix)
                 for value in y.firewall_groups[group_type][group_name]:
-                    command_group.append(f"{prefix} {group_type} {value}")
+                    command_group.append(f"{prefix} {group_type} '{value}'")
                 command_groups.append(command_group)
 
     # Firewall rules
@@ -104,22 +104,22 @@ def generate_firewall(filename):
 
         action = rule['action'] if 'action' in rule.keys() else 'accept'
 
-        commands.append(f"{prefix} rule {rule['id']} action {action}")
+        commands.append(f"{prefix} rule {rule['id']} action '{action}'")
 
         if 'source' in rule.keys():
-            commands.append(f"{prefix} rule {rule['id']} source {rule['source']}")
+            commands.append(f"{prefix} rule {rule['id']} source '{rule['source']}'")
 
         if 'destination' in rule.keys():
-            commands.append(f"{prefix} rule {rule['id']} destination {rule['destination']}")
+            commands.append(f"{prefix} rule {rule['id']} destination '{rule['destination']}'")
 
         if 'port' in rule.keys():
-            commands.append(f"{prefix} rule {rule['id']} destination port {rule['port']}")
+            commands.append(f"{prefix} rule {rule['id']} destination port '{rule['port']}'")
 
         if 'portgroup' in rule.keys():
             commands.append(f"{prefix} rule {rule['id']} destination group port-group {rule['portgroup']}")
 
         if 'proto' in rule.keys():
-            commands.append(f"{prefix} rule {rule['id']} protocol {rule['proto']}")
+            commands.append(f"{prefix} rule {rule['id']} protocol '{rule['proto']}'")
 
         if 'extras' in rule.keys():
             for extra in rule['extras']:
@@ -140,6 +140,8 @@ def generate_firewall(filename):
 
             prefix = f"firewall name {source_zone}_TO_{destination_zone}4"
             group = CommandGroup(prefix=prefix)
+
+            group.append(f"{prefix} default-action 'reject'")
 
             for source in y.rules.keys():
                 for destination in y.rules[source].keys():
