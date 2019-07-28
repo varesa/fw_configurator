@@ -47,7 +47,7 @@ def generate_interfaces(filename, number):
     for intf in y['configure']:
         for intf2 in y['configure']:
             if intf['short'] != intf2['short']:
-                group.append(f"zone-policy zone {intf['short']} from {intf2['short']}" +
+                group.append(f"zone-policy zone {intf['short']} from {intf2['short']} " +
                              f"firewall name {intf2['short']}_TO_{intf['short']}4")
     command_groups.append(group)
 

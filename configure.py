@@ -91,7 +91,7 @@ for grp in command_groups_to_apply:
 
 commands = commands_by_action['delete'] + delete_changed + commands_by_action['set']
 
-print("--Checking diff:")
+print("--Checking diff")
 status, stdout, stderr = v.configure(commands, action='compare')
 
 print("\n\nChanges:")
