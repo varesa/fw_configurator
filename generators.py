@@ -85,7 +85,7 @@ def generate_firewall(filename):
 
             for source in y.rules.keys():
                 for destination in y.rules[source].keys():
-                    if belongs_to(source_zone, source) and belongs_to(destination_zone, destination):
+                    if belongs_to(y, source_zone, source) and belongs_to(y, destination_zone, destination):
                         for rule in y.rules[source][destination]:
                             for command in vyos_rule(rule, prefix, source, destination):
                                 group.append(command)

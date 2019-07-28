@@ -16,12 +16,12 @@ def belongs_to_group(y, zone, group):
         assert f"Do not know what to do with group {group}"
 
 
-def belongs_to(zone, selector):
+def belongs_to(y, zone, selector):
     if selector == "from-any" or selector == "to-any":
         return True
     if selector.startswith('to-group-') or selector.startswith('from-group-'):
         group_name = selector.split('-', maxsplit=2)[2]
-        return belongs_to_group(zone, group_name)
+        return belongs_to_group(y, zone, group_name)
     if selector == f"to-{zone}" or selector == f"from-{zone}":
         return True
     return False

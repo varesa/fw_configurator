@@ -34,9 +34,12 @@ parser.add_argument('-i', '--interfaces',
                     help='YAML file containing list of interfaces')
 parser.add_argument('-f', '--firewall',
                     help='YAML file describing firewall rules')
-parser.add_argument('-n', '--number', 
+parser.add_argument('-n', '--number',
                     help='Index of the device when configuring a HA cluster')
-parser.add_argument('-c', '--check', action='store_true')
+parser.add_argument('-c', '--check', action='store_true',
+                    help='Compare to current version and exit, no prompt to apply')
+parser.add_argument('-d', '--debug', action='store_true',
+                    help='Additional debug prints')
 
 args = parser.parse_args()
 
@@ -67,8 +70,13 @@ delete_changed = []
 print("--Checking for changed trees")
 for grp in command_groups:
     if grp.is_changed(original):
+        if args.debug:
+            print("Changed, recreating: " + grp.prefix)
         delete_changed.append(f"delete {grp.prefix}")
         command_groups_to_apply.append(grp)
+    else:
+        if args.debug:
+            print("Unchanged, ignoring: " + grp.prefix)
 
 ## Validate and compare config
 
@@ -109,4 +117,3 @@ print("\n\nRunning commit")
 status, stdout, stderr = v.configure(commands, action='commit')
 print_filtered(stdout, stderr)
 assert status == 0
-
