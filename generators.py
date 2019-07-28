@@ -95,7 +95,30 @@ def generate_firewall(filename):
             return True
         return False
 
-    def vyos_rule(rule, prefix, context=None):
+    def make_comment(source, destination):
+        if source == 'from-any':
+            source = 'Any'
+        elif source.startswith('from-group-'):
+            source = f"Group {source[11:]}"
+        else:
+            source = f"Zone {source[5:]}"
+        
+        if destination == 'to-any':
+            destination = 'Any'
+        elif destination.startswith('to-group-'):
+            destination = f"Group {destination[9:]}"
+        else:
+            destination = f"Zone {destination[3:]}"
+
+        return f"{source} to {destination}"
+
+    def quoted_last(input):
+        split = input.split(' ')
+        if not split[-1].startswith("'"):
+            split[-1] = f"'{split[-1]}'"
+        return ' '.join(split)
+
+    def vyos_rule(rule, prefix, source, destination):
         commands = []
 
         assert isinstance(rule, dict), "vyos_rule must be used with a dict"
@@ -107,16 +130,16 @@ def generate_firewall(filename):
         commands.append(f"{prefix} rule {rule['id']} action '{action}'")
 
         if 'source' in rule.keys():
-            commands.append(f"{prefix} rule {rule['id']} source '{rule['source']}'")
+            commands.append(f"{prefix} rule {rule['id']} source {quoted_last(rule['source'])}")
 
         if 'destination' in rule.keys():
-            commands.append(f"{prefix} rule {rule['id']} destination '{rule['destination']}'")
+            commands.append(f"{prefix} rule {rule['id']} destination {quoted_last(rule['destination'])}")
 
         if 'port' in rule.keys():
             commands.append(f"{prefix} rule {rule['id']} destination port '{rule['port']}'")
 
         if 'portgroup' in rule.keys():
-            commands.append(f"{prefix} rule {rule['id']} destination group port-group {rule['portgroup']}")
+            commands.append(f"{prefix} rule {rule['id']} destination group port-group '{rule['portgroup']}'")
 
         if 'proto' in rule.keys():
             commands.append(f"{prefix} rule {rule['id']} protocol '{rule['proto']}'")
@@ -125,10 +148,12 @@ def generate_firewall(filename):
             for extra in rule['extras']:
                 commands.append(f"{prefix} rule {rule['id']} {extra}")
 
+        base_comment = make_comment(source, destination)
         if 'comment' in rule.keys():
-            assert '"' not in rule['comment'], "Double quotes not allowed in comment"
-            comment = rule['comment']
-            commands.append(f"{prefix} rule {rule['id']} description \"{comment}\"")
+            base_comment += rule['comment']
+        assert '"' not in base_comment, "Double quotes not allowed in comment"
+        assert "'" not in base_comment, "Single quotes not allowed in comment"
+        commands.append(f"{prefix} rule {rule['id']} description '{base_comment}'")
 
         return commands
 
@@ -147,7 +172,7 @@ def generate_firewall(filename):
                 for destination in y.rules[source].keys():
                     if belongs_to(source_zone, source) and belongs_to(destination_zone, destination):
                         for rule in y.rules[source][destination]:
-                            for command in vyos_rule(rule, prefix):
+                            for command in vyos_rule(rule, prefix, source, destination):
                                 group.append(command)
             command_groups.append(group)
 

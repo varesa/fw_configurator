@@ -1,4 +1,3 @@
-import sys
 
 class CommandGroup():
     def __init__(self, prefix, action='set'):
@@ -20,10 +19,4 @@ class CommandGroup():
         new_sorted = sorted(self.rules)
         old_sorted = sorted(old)
 
-
-        equality = old_sorted == new_sorted
-
-        if not equality:
-            print("Old:", old_sorted)
-            print("New:", new_sorted)
-        return equality
+        return old_sorted != new_sorted

@@ -63,9 +63,11 @@ if args.firewall:
     print("--Generating firewall configs")
     command_groups += generate_firewall(args.firewall)
 
+delete_changed = []
 print("--Checking for changed trees")
 for grp in command_groups:
     if grp.is_changed(original):
+        delete_changed.append(f"delete {grp.prefix}")
         command_groups_to_apply.append(grp)
 
 ## Validate and compare config
@@ -79,7 +81,7 @@ for grp in command_groups_to_apply:
     for rule in grp.rules:
         commands_by_action[grp.action].append(rule)
 
-commands = commands_by_action['delete'] + commands_by_action['set']
+commands = commands_by_action['delete'] + delete_changed + commands_by_action['set']
 
 print("--Checking diff:")
 status, stdout, stderr = v.configure(commands, action='compare')
