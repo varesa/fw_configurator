@@ -104,31 +104,31 @@ def generate_firewall(filename):
 
         action = rule['action'] if 'action' in rule.keys() else 'accept'
 
-        commands.append(f"{prefix} rule {rule['id']} action {action}\n")
+        commands.append(f"{prefix} rule {rule['id']} action {action}")
 
         if 'source' in rule.keys():
-            commands.append(f"{prefix} rule {rule['id']} source {rule['source']}\n")
+            commands.append(f"{prefix} rule {rule['id']} source {rule['source']}")
 
         if 'destination' in rule.keys():
-            commands.append(f"{prefix} rule {rule['id']} destination {rule['destination']}\n")
+            commands.append(f"{prefix} rule {rule['id']} destination {rule['destination']}")
 
         if 'port' in rule.keys():
-            commands.append(f"{prefix} rule {rule['id']} destination port {rule['port']}\n")
+            commands.append(f"{prefix} rule {rule['id']} destination port {rule['port']}")
 
         if 'portgroup' in rule.keys():
-            commands.append(f"{prefix} rule {rule['id']} destination group port-group {rule['portgroup']}\n")
+            commands.append(f"{prefix} rule {rule['id']} destination group port-group {rule['portgroup']}")
 
         if 'proto' in rule.keys():
-            commands.append(f"{prefix} rule {rule['id']} protocol {rule['proto']}\n")
+            commands.append(f"{prefix} rule {rule['id']} protocol {rule['proto']}")
 
         if 'extras' in rule.keys():
             for extra in rule['extras']:
-                commands.append(f"{prefix} rule {rule['id']} {extra}\n")
+                commands.append(f"{prefix} rule {rule['id']} {extra}")
 
         if 'comment' in rule.keys():
             assert '"' not in rule['comment'], "Double quotes not allowed in comment"
             comment = rule['comment']
-            commands.append(f"{prefix} rule {rule['id']} description \"{comment}\"\n")
+            commands.append(f"{prefix} rule {rule['id']} description \"{comment}\"")
 
         return commands
 
