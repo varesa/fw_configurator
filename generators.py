@@ -71,6 +71,7 @@ def generate_firewall(filename):
                 command_group = CommandGroup(prefix=prefix)
                 for value in y.firewall_groups[group_type][group_name]:
                     command_group.append(f"{prefix} {group_type} {value}")
+                command_groups.append(command_group)
 
     # Firewall rules
     
