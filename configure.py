@@ -69,7 +69,7 @@ if args.firewall:
 delete_changed = []
 print("--Checking for changed trees")
 for grp in command_groups:
-    if grp.is_changed(original):
+    if grp.is_changed(original) and len(grp.prefix) > 0:
         if args.debug:
             print("Changed, recreating: " + grp.prefix)
         delete_changed.append(f"delete {grp.prefix}")

@@ -14,7 +14,6 @@ def generate_interfaces(filename, number):
     else:
         assert False, f"Unsupported configuration: HA index {number}"
 
-    print(vrrp_prio)
 
     command_groups = []
 
@@ -27,6 +26,9 @@ def generate_interfaces(filename, number):
 
     # interfaces to configure
     for intf in y['configure']:
+        if 'no_configure' in intf.keys() and intf['no_configure']:
+            continue
+
         prefix_i = f"interfaces ethernet eth0 vif {intf['vlan']}"
         group_int = CommandGroup(prefix_i)
         group_int.append(f"{prefix_i} address {intf['vrrp_prefix']}.{number}/24")
@@ -49,6 +51,7 @@ def generate_interfaces(filename, number):
             if intf['short'] != intf2['short']:
                 group.append(f"zone-policy zone {intf['short']} from {intf2['short']} " +
                              f"firewall name {intf2['short']}_TO_{intf['short']}4")
+        group.append(f"zone-policy zone {intf['short']} interface eth0.{intf['vlan']}")
     command_groups.append(group)
 
     return command_groups
