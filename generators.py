@@ -31,27 +31,46 @@ def generate_interfaces(filename, number):
 
         prefix_i = f"interfaces ethernet eth0 vif {intf['vlan']}"
         group_int = CommandGroup(prefix_i)
-        group_int.append(f"{prefix_i} address {intf['vrrp_prefix']}.{number}/24")
+
+        if 'addresses' in intf.keys():
+            for extra_address in intf['addresses']:
+                group_int.append(f"{prefix_i} address {extra_address.replace('<num>', str(number))}")
+
+        vrrp = True
+        if 'vrrp_prefix' in intf.keys():
+            address = f"{intf['vrrp_prefix']}.{number}/24"
+        elif 'vrrp_base' in intf.keys():
+            a, b, c, d = intf['vrrp_base'].split('.')
+            address = f"{a}.{b}.{c}.{int(d)+number}/30"
+        else:
+            vrrp = False
+
+        if vrrp:
+            group_int.append(f"{prefix_i} address {address}")
+
+            prefix_h = f"high-availability vrrp group eth0.{intf['vlan']}-10"
+            group_ha = CommandGroup(prefix_h)
+            group_ha.append(f"{prefix_h} advertise-interval 1")
+            group_ha.append(f"{prefix_h} interface eth0.{intf['vlan']}")
+            group_ha.append(f"{prefix_h} priority {vrrp_prio}")
+            group_ha.append(f"{prefix_h} virtual-address {intf['vip']}")
+            group_ha.append(f"{prefix_h} vrid 10")
+            command_groups.append(group_ha)
+        
         group_int.append(f"{prefix_i} description '{intf['description']}'")
         command_groups.append(group_int)
 
-        prefix_h = f"high-availability vrrp group eth0.{intf['vlan']}-10"
-        group_ha = CommandGroup(prefix_h)
-        group_ha.append(f"{prefix_h} advertise-interval 1")
-        group_ha.append(f"{prefix_h} interface eth0.{intf['vlan']}")
-        group_ha.append(f"{prefix_h} priority {vrrp_prio}")
-        group_ha.append(f"{prefix_h} virtual-address {intf['vip']}")
-        group_ha.append(f"{prefix_h} vrid 10")
-        command_groups.append(group_ha)
-
     # Zone-policy
     group = CommandGroup(prefix='zone-policy')
-    for intf in y['configure']:
-        for intf2 in y['configure']:
+    for intf in y['configure'] + [{"short": "LOCAL"}]:
+        for intf2 in y['configure'] + [{"short": "LOCAL"}]:
             if intf['short'] != intf2['short']:
                 group.append(f"zone-policy zone {intf['short']} from {intf2['short']} " +
                              f"firewall name {intf2['short']}_TO_{intf['short']}4")
-        group.append(f"zone-policy zone {intf['short']} interface eth0.{intf['vlan']}")
+        if intf['short'] == "LOCAL":
+            group.append("zone-policy zone LOCAL local-zone")
+        else:
+            group.append(f"zone-policy zone {intf['short']} interface eth0.{intf['vlan']}")
     command_groups.append(group)
 
     return command_groups
