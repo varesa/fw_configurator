@@ -1,8 +1,11 @@
 #!/bin/env python3
 
+import os
 import subprocess
 import tempfile
 import textwrap
+
+script_path = os.path.dirname(__file__)
 
 
 def clean(list):
@@ -46,7 +49,8 @@ class Vyos():
 
     def cleanup_files(self):
         for file in self.files:
-            print(f"Would remove {self.hostname}:{file}")
+            print(f"Removing {self.hostname}:{file}")
+            self.execute_command(f"rm {file}")
 
     def execute_command(self, command):
         proc = subprocess.Popen(
@@ -59,7 +63,7 @@ class Vyos():
         if not self.tools_copied:
             print("Pushing updated scripts")
             self.execute_command('mkdir -p ' + self.basedir)
-            self.copy_file('tools/', self.basedir, recursive=True, keep=True)
+            self.copy_file(os.path.join(script_path, 'tools'), self.basedir, recursive=True, keep=True)
             self.tools_copied = True
 
     def get_config(self):
