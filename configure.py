@@ -58,13 +58,13 @@ original = list(v.get_config())
 command_groups = []
 command_groups_to_apply = []
 
-if args.interfaces:
-    print("--Generating interface configs")
-    command_groups += generate_interfaces(args.interfaces, int(args.number))
-
 if args.firewall:
     print("--Generating firewall configs")
     command_groups += generate_firewall(args.firewall)
+
+if args.interfaces:
+    print("--Generating interface configs")
+    command_groups += generate_interfaces(args.interfaces, int(args.number))
 
 delete_changed = []
 print("--Checking for changed trees")

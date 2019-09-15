@@ -7,6 +7,18 @@ from generator_utilities import read_yaml, belongs_to, vyos_rule
 def generate_interfaces(filename, number):
     y = read_yaml(filename)
 
+    for key in y.keys():
+        if key not in ('configure', 'delete'):
+            raise Exception(f"Unknown key '{key}' in {filename}")
+
+    for row in y['configure']:
+        for key in row.keys():
+            if key not in ('vlan', 'vip', 'vrrp_base', 'addresses', 'short', 'description', 'no_configure'):
+                raise Exception(f"Unknown key '{key}' in {filename}[configure]")
+
+    if 'delete' in y.keys() and len(y['delete']) != 0:
+        raise Exception(f"Delete is not implemented! [{filename}]")
+
     if number == 1:
         vrrp_prio = 200
     elif number == 2:
