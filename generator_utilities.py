@@ -64,13 +64,20 @@ def vyos_rule(rule, prefix, source, destination):
     commands.append(f"{prefix} rule {rule['id']} action '{action}'")
 
     if 'source' in rule.keys():
+        if rule['source'].startswith('ag '):
+            rule['source'] = 'group address-group ' + rule['source'][3:]
         commands.append(f"{prefix} rule {rule['id']} source {quoted_last(rule['source'])}")
 
     if 'destination' in rule.keys():
+        if rule['destination'].startswith('ag '):
+            rule['destination'] = 'group address-group ' + rule['destination'][3:]
         commands.append(f"{prefix} rule {rule['id']} destination {quoted_last(rule['destination'])}")
 
     if 'port' in rule.keys():
-        commands.append(f"{prefix} rule {rule['id']} destination port '{rule['port']}'")
+        if isinstance(rule['port'], str) and rule['port'].startswith('pg '):
+            commands.append(f"{prefix} rule {rule['id']} destination group port-group '{rule['port'][3:]}'")
+        else:
+            commands.append(f"{prefix} rule {rule['id']} destination port '{rule['port']}'")
 
     if 'portgroup' in rule.keys():
         commands.append(f"{prefix} rule {rule['id']} destination group port-group '{rule['portgroup']}'")
