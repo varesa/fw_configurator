@@ -1,0 +1,201 @@
+firewall_groups:
+    address: 
+        ceph-mons:
+            - 10.64.5.101
+            - 10.64.5.102
+            # Mon1 public and private:
+            - 10.64.5.134
+            - 10.64.10.71
+        dns-resolvers:
+            - 10.0.100.30
+            - 10.0.110.30
+            - 10.0.110.90
+            - 10.60.10.30
+            - 10.64.30.30
+            - 10.64.30.90
+            - 10.10.10.10
+            - 10.10.10.20
+        freeipa-dcs:
+            - 10.0.100.50
+            - 10.0.110.50
+            - 10.0.110.80
+            - 10.30.0.50
+            - 10.60.10.50
+            - 10.64.30.50
+            - 10.64.30.80
+        ibgp-peers:
+            - 10.64.20.10
+            - 10.64.20.20
+            - 10.64.20.101
+            - 10.64.20.102
+        librenms:
+            - 10.0.110.59
+        openmanage:
+            - 10.64.5.4
+        openstack-api-nodes:
+            - 10.64.11.11
+            - 10.64.11.12
+            - 10.64.11.13
+        openstack-vip:
+            - 10.64.11.10
+        openstack-mon:
+            - 10.64.11.88
+        openstack-network-nodes:
+            - 10.64.11.21
+            - 10.64.11.22
+        management-hosts:
+            # desktop
+            - 192.168.10.5
+            # yoga
+            - 172.19.17.2
+            # aux1/aux2
+            - 10.64.5.101
+            - 10.64.5.102
+
+    network:
+        RFC1918:
+            - 10.0.0.0/8
+            - 172.16.0.0/12
+            - 192.168.0.0/16
+        openstack-tenants:
+            - 10.65.0.0/16
+        openstack-sharedservices:
+            - 10.65.16.0/24
+
+    port: 
+        http-https:
+            - 80
+            - 443
+        freeipa-tcp:
+            - 80
+            - 443
+            - 389
+            - 636
+            - 53
+            - 88
+            - 464
+        freeipa-udp:
+            - 53
+            - 88
+            - 464
+        ldap:
+            - 389
+            - 636
+        openstack-public-api-tcp:
+            - 5000
+            - 8000
+            - 8004
+            - 8774
+            - 8776
+            - 8780
+            - 8786
+            - 9292
+            - 9696
+
+zones:
+    - CORE
+    - LOCAL
+    - MGT
+    - OOB
+    - OST
+    - OSTXFR
+    - PXE
+    - VPN
+    - WAN
+
+zone_groups:
+    MANAGEMENT_SOURCES:
+        include:
+            - MGT
+            - VPN
+    VRRP:
+        exclude:
+            - LOCAL
+            - VPN
+    INTERNAL:
+        include:
+            - LOCAL
+            - MGT
+            - CORE
+            - OST
+            - PXE
+            - VPN
+
+rules: 
+    from-any:
+        to-any:
+            - { id: 1, extras: ["state established 'enable'", "state related 'enable'"]}
+            - { id: 5, proto: icmp }
+        to-WAN:
+            - { id: 201, action: accept }
+        to-OSTXFR:
+            - { id: 201, action: accept }
+
+    from-group-INTERNAL:
+        to-CORE:
+            - { id: 301, proto: tcp_udp, port: 53, destination: 'group address-group dns-resolvers' }
+        to-VPN:
+            - { id: 201, action: accept }
+        to-OST:
+            - { id: 201, action: accept, destination: 'group address-group openstack-vip', portgroup: openstack-public-api-tcp }
+
+    from-group-MANAGEMENT_SOURCES:
+        to-group-INTERNAL:
+            - { id: 501, source: "ag management-hosts", port: 22, proto: tcp }
+        to-MGT:
+            # Ceph dashboards
+            - { id: 521, source: "ag management-hosts", destination: 'ag ceph-mons', port: 3000, proto: tcp }
+            - { id: 522, source: "ag management-hosts", destination: 'ag ceph-mons', port: 8443, proto: tcp }
+        to-OST:
+            # HAproxy status
+            - { id: 521, source: "ag management-hosts", proto: tcp, port: 1984, destination: 'ag openstack-network-nodes' }
+            # Grafana
+            - { id: 522, source: "ag management-hosts", proto: tcp, port: 3000, destination: 'ag openstack-mon' }
+            # RabbitMQ management
+            - { id: 523, source: "ag management-hosts", proto: tcp, port: 15672, destination: 'ag openstack-api-nodes' }
+
+# VRRP + OSPF
+    from-group-VRRP:
+        to-LOCAL:
+            - { id: 601, proto: vrrp }
+    from-CORE:
+        to-LOCAL:
+            - { id: 801, proto: ospf, source: 'group address-group dns-resolvers' }
+
+    from-LOCAL:
+        to-group-VRRP:
+            - { id: 602, proto: vrrp }
+        to-CORE:
+            - { id: 801, proto: ospf }
+
+    from-MGT:
+        to-OOB:
+            - { id: 801, source: "group address-group openmanage" }
+
+    from-OSTXFR:
+        to-CORE:
+            - { id: 801, proto: tcp, portgroup: ldap, source: 'group network-group openstack-sharedservices', destination: 'group address-group freeipa-dcs' }
+            - { id: 802, proto: tcp_udp, port: 53, destination: 'group address-group dns-resolvers' }
+
+    from-VPN:
+        to-CORE:
+            - { id: 801, proto: tcp, portgroup: freeipa-tcp, source: "group address-group freeipa-dcs", destination: 'group address-group freeipa-dcs' }
+            - { id: 802, proto: udp, portgroup: freeipa-udp, source: "group address-group freeipa-dcs", destination: 'group address-group freeipa-dcs' }
+            - { id: 803, proto: tcp_udp, port: 53, destination: 'group address-group freeipa-dcs' }
+            - { id: 804, proto: tcp, portgroup: ldap, destination: 'group address-group freeipa-dcs' }
+        to-OST:
+            # Horizon
+            - { id: 822, proto: tcp, port: 80, destination: 'group address-group openstack-vip' }
+            # VNC
+            - { id: 823, proto: tcp, port: 6080, destination: 'group address-group openstack-vip' }
+        to-LOCAL:
+            - { id: 801, proto: tcp, port: 179, source: "group address-group ibgp-peers" }
+        to-MGT:
+            # LibreNMS SNMP
+            - { id: 801, proto: udp, port: 161, source: "group address-group librenms" }
+            # Dell OpenManage
+            - { id: 802, proto: tcp, port: 443, source: "group address-group management-hosts", destination: "group address-group openmanage" }
+        to-OOB:
+            - { id: 801, proto: tcp, portgroup: http-https, source: "group address-group management-hosts" }
+            - { id: 802, proto: tcp, port: 5900, source: "group address-group management-hosts" }
+            - { id: 803, proto: tcp, port: 22, source: "group address-group management-hosts" }
