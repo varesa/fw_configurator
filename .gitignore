@@ -1,2 +1,3 @@
 vars_*
+!vars_firewall.example.yaml
 __pycache__
